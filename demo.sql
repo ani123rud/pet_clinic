@@ -62,3 +62,11 @@ INSERT INTO visits (pet_id, vet_id, visit_date, description)
 VALUES
 (1, 1, '2025-01-12', 'Annual vaccination'),
 (2, 2, '2025-03-20', 'Skin allergy checkup');
+
+-- USERS TABLE FOR AUTH
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

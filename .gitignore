@@ -1,0 +1,26 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Output directories
+bin/
+dist/
+build/
+
+# Go build cache
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Env and local configs
+.env
+.env.*

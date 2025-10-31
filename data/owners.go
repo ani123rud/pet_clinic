@@ -1,37 +1,49 @@
 package data
 
-import (
-	"petclinic/models"
-)
+import "database/sql"
 
-func ListOwners() ([]models.Owner, error) {
-	rows, err := DB.Query("SELECT id, name, phone, address FROM owners")
+type OwnerRow struct {
+	ID      int
+	Name    string
+	Phone   string
+	Address string
+}
+
+type OwnerInput struct {
+	Name    string
+	Phone   string
+	Address string
+}
+
+func ListOwners(db *sql.DB) ([]OwnerRow, error) {
+	rows, err := db.Query("SELECT id, name, phone, address FROM owners")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	owners := []models.Owner{}
+	res := []OwnerRow{}
 	for rows.Next() {
-		var o models.Owner
+		var o OwnerRow
 		if err := rows.Scan(&o.ID, &o.Name, &o.Phone, &o.Address); err != nil {
 			return nil, err
 		}
-		owners = append(owners, o)
+		res = append(res, o)
 	}
-	return owners, nil
+	return res, nil
 }
 
-func GetOwnerByID(id int) (models.Owner, error) {
-	var o models.Owner
-	err := DB.QueryRow("SELECT id, name, phone, address FROM owners WHERE id=$1", id).
+func GetOwnerByID(db *sql.DB, id int) (OwnerRow, error) {
+	var o OwnerRow
+	err := db.QueryRow("SELECT id, name, phone, address FROM owners WHERE id=$1", id).
 		Scan(&o.ID, &o.Name, &o.Phone, &o.Address)
 	return o, err
 }
 
-func CreateOwner(o models.Owner) (models.Owner, error) {
-	err := DB.QueryRow(
+func CreateOwner(db *sql.DB, in OwnerInput) (int, error) {
+	var id int
+	err := db.QueryRow(
 		"INSERT INTO owners(name,phone,address) VALUES($1,$2,$3) RETURNING id",
-		o.Name, o.Phone, o.Address,
-	).Scan(&o.ID)
-	return o, err
+		in.Name, in.Phone, in.Address,
+	).Scan(&id)
+	return id, err
 }
