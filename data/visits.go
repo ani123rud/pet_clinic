@@ -52,3 +52,21 @@ func CreateVisit(db *sql.DB, in VisitInput) (int, error) {
 	).Scan(&id)
 	return id, err
 }
+
+// UpdateVisit updates an existing visit in the database
+func UpdateVisit(db *sql.DB, id int, in VisitInput) error {
+	sqlStatement := `
+		UPDATE visits 
+		SET pet_id = $1, vet_id = $2, visit_date = $3, description = $4
+		WHERE id = $5`
+	
+	_, err := db.Exec(sqlStatement, in.PetID, in.VetID, in.Visit, in.Desc, id)
+	return err
+}
+
+// DeleteVisit removes a visit from the database
+func DeleteVisit(db *sql.DB, id int) error {
+	sqlStatement := `DELETE FROM visits WHERE id = $1`
+	_, err := db.Exec(sqlStatement, id)
+	return err
+}

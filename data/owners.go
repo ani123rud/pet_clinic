@@ -47,3 +47,21 @@ func CreateOwner(db *sql.DB, in OwnerInput) (int, error) {
 	).Scan(&id)
 	return id, err
 }
+
+// UpdateOwner updates an existing owner in the database
+func UpdateOwner(db *sql.DB, id int, in OwnerInput) error {
+	sqlStatement := `
+		UPDATE owners 
+		SET name = $1, phone = $2, address = $3
+		WHERE id = $4`
+	
+	_, err := db.Exec(sqlStatement, in.Name, in.Phone, in.Address, id)
+	return err
+}
+
+// DeleteOwner removes an owner from the database
+func DeleteOwner(db *sql.DB, id int) error {
+	sqlStatement := `DELETE FROM owners WHERE id = $1`
+	_, err := db.Exec(sqlStatement, id)
+	return err
+}

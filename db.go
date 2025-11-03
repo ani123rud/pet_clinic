@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -10,25 +11,28 @@ import (
 
 var DB *sql.DB
 
-func InitDB() {
+func InitDB() (*sql.DB, error) {
 	host := getenvDefault("DB_HOST", "localhost")
 	port := getenvDefault("DB_PORT", "5432")
 	user := getenvDefault("DB_USER", "petuser")
-	pass := getenvDefault("DB_PASS", "petpass")
-	name := getenvDefault("DB_NAME", "petclinic")
-	ssl := getenvDefault("DB_SSLMODE", "disable")
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, pass, name, ssl)
-	var err error
-	DB, err = sql.Open("postgres", connStr)
+	password := getenvDefault("DB_PASSWORD", "petpass")
+	dbname := getenvDefault("DB_NAME", "petclinic")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error opening database: %w", err)
 	}
 
-	if err = DB.Ping(); err != nil {
-		panic(err)
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	fmt.Println("Connected to PostgreSQL!")
+	log.Println("Successfully connected to database")
+	return db, nil
 }
 
 func getenvDefault(k, d string) string {

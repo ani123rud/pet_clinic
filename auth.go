@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"database/sql"
+
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"petclinic/data"
+	"petclinic/logger"
+
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"petclinic/data"
 )
 
 type User struct {
@@ -63,35 +65,40 @@ func generateToken(userID int, email string) (string, error) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	logger.Info("Handling user registration request")
+
 	var req registerRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" || req.Password == "" {
-		http.Error(w, "invalid json or missing fields", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Warn("Invalid registration request: %v", err)
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
-	exists, err := data.EmailExists(DB, req.Email)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	if exists {
-		http.Error(w, "email already registered", http.StatusConflict)
+	if req.Email == "" || req.Password == "" {
+		logger.Warn("Registration attempt with empty email or password")
+		http.Error(w, "email and password are required", http.StatusBadRequest)
 		return
 	}
 
+	logger.Debug("Hashing password for user: %s", req.Email)
 	hash, err := hashPassword(req.Password)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		logger.Error("Failed to hash password: %v", err)
+		http.Error(w, "failed to process request", http.StatusInternalServerError)
 		return
 	}
 
-	urow, err := data.CreateUser(DB, req.Email, hash)
+	logger.Debug("Creating user in database: %s", req.Email)
+	user, err := data.CreateUser(DB, req.Email, hash)
+
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		logger.Error("Failed to create user %s: %v", req.Email, err)
+		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
 
-	tok, err := generateToken(urow.ID, urow.Email)
+	logger.Info("Successfully registered user: %s (ID: %d)", req.Email, user.ID)
+	tok, err := generateToken(user.ID, req.Email)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -101,33 +108,47 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	logger.Info("Handling login request")
+
 	var req loginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" || req.Password == "" {
-		http.Error(w, "invalid json or missing fields", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Warn("Invalid login request: %v", err)
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
-	urow, err := data.FindUserByEmail(DB, req.Email)
-	if errors.Is(err, sql.ErrNoRows) {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
-		return
-	} else if err != nil {
-		http.Error(w, err.Error(), 500)
+	if req.Email == "" || req.Password == "" {
+		logger.Warn("Login attempt with empty email or password")
+		http.Error(w, "email and password are required", http.StatusBadRequest)
 		return
 	}
 
-	if err := checkPassword(urow.PasswordHash, req.Password); err != nil {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
-		return
-	}
-
-	tok, err := generateToken(urow.ID, urow.Email)
+	logger.Debug("Looking up user: %s", req.Email)
+	user, err := data.FindUserByEmail(DB, req.Email)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		logger.Warn("Login failed - user not found: %s", req.Email)
+		http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return
 	}
+
+	logger.Debug("Verifying password for user: %s", req.Email)
+	if err := checkPassword(user.PasswordHash, req.Password); err != nil {
+		logger.Warn("Login failed - invalid password for user: %s", req.Email)
+		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	logger.Debug("Generating JWT token for user: %s (ID: %d)", req.Email, user.ID)
+	token, err := generateToken(user.ID, user.Email)
+	if err != nil {
+		logger.Error("Failed to generate token for user %s: %v", req.Email, err)
+		http.Error(w, "failed to process request", http.StatusInternalServerError)
+		return
+	}
+
+	logger.Info("Successful login for user: %s", req.Email)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(authResponse{Token: tok})
+	json.NewEncoder(w).Encode(authResponse{Token: token})
 }
 
 type ctxKey string
@@ -136,47 +157,56 @@ const ctxUserIDKey ctxKey = "user_id"
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodOptions {
-			next.ServeHTTP(w, r)
+		logger.Debug("Processing authentication for request: %s %s", r.Method, r.URL.Path)
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			logger.Warn("Missing authorization header")
+			http.Error(w, "missing authorization header", http.StatusUnauthorized)
 			return
 		}
 
-		auth := r.Header.Get("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
-			http.Error(w, "missing bearer token", http.StatusUnauthorized)
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			logger.Warn("Invalid authorization header format")
+			http.Error(w, "invalid authorization header format", http.StatusUnauthorized)
 			return
 		}
-		tokStr := strings.TrimPrefix(auth, "Bearer ")
 
-		tok, err := jwt.Parse(tokStr, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+		tokenString := parts[1]
+		logger.Debug("Validating JWT token")
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("unexpected signing method")
 			}
 			return getJWTSecret(), nil
 		})
-		if err != nil || !tok.Valid {
+
+		if err != nil || !token.Valid {
+			logger.Warn("Invalid JWT token: %v", err)
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		claims, ok := tok.Claims.(jwt.MapClaims)
-		if !ok {
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok || !token.Valid {
+			logger.Warn("Invalid token claims")
 			http.Error(w, "invalid token claims", http.StatusUnauthorized)
 			return
 		}
-		uidAny := claims["sub"]
-		var uid int
-		switch v := uidAny.(type) {
-		case float64:
-			uid = int(v)
-		case int:
-			uid = v
-		default:
-			http.Error(w, "invalid token subject", http.StatusUnauthorized)
+
+		userID, ok := claims["sub"].(float64)
+		if !ok {
+			logger.Warn("Invalid user ID in token")
+			http.Error(w, "invalid user ID in token", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), ctxUserIDKey, uid)
+		// Add user ID to context
+		userIDInt := int(userID)
+		logger.Debug("Successfully authenticated user ID: %d", userIDInt)
+		ctx := context.WithValue(r.Context(), ctxUserIDKey, userIDInt)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }

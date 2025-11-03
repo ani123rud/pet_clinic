@@ -1,14 +1,32 @@
 package main
 
 import (
-	"log"
 	"net/http"
+	"os"
+
 	"github.com/joho/godotenv"
+	"petclinic/logger"
 )
 
 func main() {
-	_ = godotenv.Load()
-	InitDB()
+	// Initialize logger with INFO level by default
+	logger.SetLevel(os.Getenv("LOG_LEVEL"))
+	logger.Info("Starting Pet Clinic application...")
+
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		logger.Warn("Error loading .env file: %v", err)
+	}
+
+	// Initialize database
+	var err error
+	DB, err = InitDB()
+	if err != nil {
+		logger.Fatal("Failed to initialize database: %v", err)
+	}
+	defer DB.Close()
+
+	logger.Info("Database connection established")
 
 	http.HandleFunc("/auth/register", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -38,15 +56,21 @@ func main() {
 	}))
 
 	http.HandleFunc("/owners/id", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+		switch r.Method {
+		case http.MethodGet:
 			GetOwnerByID(w, r)
-		} else {
+		case http.MethodPut:
+			UpdateOwner(w, r)
+		case http.MethodDelete:
+			DeleteOwner(w, r)
+		default:
 			http.Error(w, "Method not allowed", 405)
 		}
 	}))
 
 	// Pets
 	http.HandleFunc("/pets", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("%s %s", r.Method, r.URL.Path)
 		if r.Method == http.MethodGet {
 			GetPets(w, r)
 		} else if r.Method == http.MethodPost {
@@ -57,9 +81,15 @@ func main() {
 	}))
 
 	http.HandleFunc("/pets/id", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+		logger.Debug("%s %s", r.Method, r.URL.Path)
+		switch r.Method {
+		case http.MethodGet:
 			GetPetByID(w, r)
-		} else {
+		case http.MethodPut:
+			UpdatePet(w, r)
+		case http.MethodDelete:
+			DeletePet(w, r)
+		default:
 			http.Error(w, "Method not allowed", 405)
 		}
 	}))
@@ -76,13 +106,18 @@ func main() {
 	}))
 
 	http.HandleFunc("/visits/id", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+		switch r.Method {
+		case http.MethodGet:
 			GetVisitByID(w, r)
-		} else {
+		case http.MethodPut:
+			UpdateVisit(w, r)
+		case http.MethodDelete:
+			DeleteVisit(w, r)
+		default:
 			http.Error(w, "Method not allowed", 405)
 		}
 	}))
 
-	log.Println("Server running at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	logger.Info("Server starting on :8080")
+	logger.Fatal("Server stopped: %v", http.ListenAndServe(":8080", nil))
 }
