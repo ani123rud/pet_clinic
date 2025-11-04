@@ -11,10 +11,10 @@ import (
 // -------------------- Owners --------------------
 
 func GetOwners(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Fetching all owners")
+	logger.InfoCtx(r.Context(), "Fetching all owners")
 	rows, err := data.ListOwners(DB)
 	if err != nil {
-		logger.Error("Failed to fetch owners: %v", err)
+		logger.ErrorCtx(r.Context(), "Failed to fetch owners: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -22,7 +22,7 @@ func GetOwners(w http.ResponseWriter, r *http.Request) {
 	for _, ro := range rows {
 		owners = append(owners, Owner{ID: ro.ID, Name: ro.Name, Phone: ro.Phone, Address: ro.Address})
 	}
-	logger.Debug("Retrieved %d owners", len(owners))
+	logger.DebugCtx(r.Context(), "Retrieved %d owners", len(owners))
 	json.NewEncoder(w).Encode(owners)
 }
 
@@ -30,34 +30,34 @@ func GetOwnerByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid ID format: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid ID format: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
-	logger.Debug("Fetching owner with ID: %d", id)
+	logger.DebugCtx(r.Context(), "Fetching owner with ID: %d", id)
 	ro, err := data.GetOwnerByID(DB, id)
 	if err != nil {
-		logger.Error("Failed to fetch owner with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Failed to fetch owner with ID %d: %v", id, err)
 		http.Error(w, "owner not found", http.StatusNotFound)
 		return
 	}
 
 	o := Owner{ID: ro.ID, Name: ro.Name, Phone: ro.Phone, Address: ro.Address}
-	logger.Debug("Successfully retrieved owner: %+v", o)
+	logger.DebugCtx(r.Context(), "Successfully retrieved owner: %+v", o)
 	json.NewEncoder(w).Encode(o)
 }
 
 func CreateOwner(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Creating new owner")
+	logger.InfoCtx(r.Context(), "Creating new owner")
 	var o Owner
 	if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
-		logger.Warn("Invalid JSON in request: %v", err)
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
 
-	logger.Debug("Processing owner data: %+v", o)
+	logger.DebugCtx(r.Context(), "Processing owner data: %+v", o)
 	id, err := data.CreateOwner(DB, data.OwnerInput{
 		Name:    o.Name,
 		Phone:   o.Phone,
@@ -65,12 +65,12 @@ func CreateOwner(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		logger.Error("Failed to create owner: %v", err)
+		logger.ErrorCtx(r.Context(), "Failed to create owner: %v", err)
 		http.Error(w, "failed to create owner", http.StatusInternalServerError)
 		return
 	}
 
-	logger.Info("Successfully created owner with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully created owner with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -81,13 +81,13 @@ func CreateOwner(w http.ResponseWriter, r *http.Request) {
 
 // UpdateOwner updates an existing owner
 func UpdateOwner(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Updating owner")
+	logger.InfoCtx(r.Context(), "Updating owner")
 	
 	// Get ID from URL
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid owner ID format: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid owner ID format: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
@@ -95,7 +95,7 @@ func UpdateOwner(w http.ResponseWriter, r *http.Request) {
 	// Get existing owner
 	_, err = data.GetOwnerByID(DB, id)
 	if err != nil {
-		logger.Error("Owner not found with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Owner not found with ID %d: %v", id, err)
 		http.Error(w, "owner not found", http.StatusNotFound)
 		return
 	}
@@ -103,7 +103,7 @@ func UpdateOwner(w http.ResponseWriter, r *http.Request) {
 	// Decode request body
 	var o Owner
 	if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
-		logger.Warn("Invalid JSON in request: %v", err)
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
@@ -116,12 +116,12 @@ func UpdateOwner(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		logger.Error("Failed to update owner with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Failed to update owner with ID %d: %v", id, err)
 		http.Error(w, "failed to update owner", http.StatusInternalServerError)
 		return
 	}
 
-	logger.Info("Successfully updated owner with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully updated owner with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":      id,
@@ -131,13 +131,13 @@ func UpdateOwner(w http.ResponseWriter, r *http.Request) {
 
 // DeleteOwner deletes an owner by ID
 func DeleteOwner(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Deleting owner")
+	logger.InfoCtx(r.Context(), "Deleting owner")
 	
 	// Get ID from URL
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid owner ID format for deletion: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid owner ID format for deletion: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
@@ -145,7 +145,7 @@ func DeleteOwner(w http.ResponseWriter, r *http.Request) {
 	// Check if owner exists
 	_, err = data.GetOwnerByID(DB, id)
 	if err != nil {
-		logger.Error("Owner not found for deletion with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Owner not found for deletion with ID %d: %v", id, err)
 		http.Error(w, "owner not found", http.StatusNotFound)
 		return
 	}
@@ -153,12 +153,12 @@ func DeleteOwner(w http.ResponseWriter, r *http.Request) {
 	// Delete owner
 	err = data.DeleteOwner(DB, id)
 	if err != nil {
-		logger.Error("Failed to delete owner with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Failed to delete owner with ID %d: %v", id, err)
 		http.Error(w, "failed to delete owner", http.StatusInternalServerError)
 		return
 	}
 
-	logger.Info("Successfully deleted owner with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully deleted owner with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -167,13 +167,13 @@ func DeleteOwner(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePet updates an existing pet
 func UpdatePet(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Updating pet")
+	logger.InfoCtx(r.Context(), "Updating pet")
 	
 	// Get ID from URL
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid pet ID format: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid pet ID format: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
@@ -181,7 +181,7 @@ func UpdatePet(w http.ResponseWriter, r *http.Request) {
 	// Get existing pet
 	_, err = data.GetPetByID(DB, id)
 	if err != nil {
-		logger.Error("Pet not found with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Pet not found with ID %d: %v", id, err)
 		http.Error(w, "pet not found", http.StatusNotFound)
 		return
 	}
@@ -189,7 +189,7 @@ func UpdatePet(w http.ResponseWriter, r *http.Request) {
 	// Decode request body
 	var p Pet
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		logger.Warn("Invalid JSON in request: %v", err)
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
@@ -204,12 +204,12 @@ func UpdatePet(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		logger.Error("Failed to update pet with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Failed to update pet with ID %d: %v", id, err)
 		http.Error(w, "failed to update pet", http.StatusInternalServerError)
 		return
 	}
 
-	logger.Info("Successfully updated pet with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully updated pet with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":      id,
@@ -219,13 +219,13 @@ func UpdatePet(w http.ResponseWriter, r *http.Request) {
 
 // DeletePet deletes a pet by ID
 func DeletePet(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Deleting pet")
+	logger.InfoCtx(r.Context(), "Deleting pet")
 	
 	// Get ID from URL
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid pet ID format for deletion: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid pet ID format for deletion: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
@@ -233,7 +233,7 @@ func DeletePet(w http.ResponseWriter, r *http.Request) {
 	// Check if pet exists
 	_, err = data.GetPetByID(DB, id)
 	if err != nil {
-		logger.Error("Pet not found for deletion with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Pet not found for deletion with ID %d: %v", id, err)
 		http.Error(w, "pet not found", http.StatusNotFound)
 		return
 	}
@@ -241,12 +241,12 @@ func DeletePet(w http.ResponseWriter, r *http.Request) {
 	// Delete pet
 	err = data.DeletePet(DB, id)
 	if err != nil {
-		logger.Error("Failed to delete pet with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Failed to delete pet with ID %d: %v", id, err)
 		http.Error(w, "failed to delete pet", http.StatusInternalServerError)
 		return
 	}
 
-	logger.Info("Successfully deleted pet with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully deleted pet with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -254,10 +254,10 @@ func DeletePet(w http.ResponseWriter, r *http.Request) {
 // -------------------- Pets --------------------
 
 func GetPets(w http.ResponseWriter, r *http.Request) {
-	logger.Debug("Fetching all pets")
+	logger.DebugCtx(r.Context(), "Fetching all pets")
 	rows, err := data.ListPets(DB)
 	if err != nil {
-		logger.Error("Failed to fetch pets: %v", err)
+		logger.ErrorCtx(r.Context(), "Failed to fetch pets: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -265,7 +265,7 @@ func GetPets(w http.ResponseWriter, r *http.Request) {
 	for _, rp := range rows {
 		pets = append(pets, Pet{ID: rp.ID, Name: rp.Name, Species: rp.Species, Breed: rp.Breed, Birth: rp.Birth, OwnerID: rp.OwnerID})
 	}
-	logger.Debug("Retrieved %d pets", len(pets))
+	logger.DebugCtx(r.Context(), "Retrieved %d pets", len(pets))
 	json.NewEncoder(w).Encode(pets)
 }
 
@@ -273,35 +273,35 @@ func GetPetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid pet ID format: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid pet ID format: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
-	logger.Debug("Fetching pet with ID: %d", id)
+	logger.DebugCtx(r.Context(), "Fetching pet with ID: %d", id)
 	rp, err := data.GetPetByID(DB, id)
 	if err != nil {
-		logger.Error("Pet not found with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Pet not found with ID %d: %v", id, err)
 		http.Error(w, "pet not found", http.StatusNotFound)
 		return
 	}
 
 	p := Pet{ID: rp.ID, Name: rp.Name, Species: rp.Species, Breed: rp.Breed, Birth: rp.Birth, OwnerID: rp.OwnerID}
-	logger.Debug("Successfully retrieved pet: %+v", p)
+	logger.DebugCtx(r.Context(), "Successfully retrieved pet: %+v", p)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(p)
 }
 
 func CreatePet(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Creating new pet")
+	logger.InfoCtx(r.Context(), "Creating new pet")
 	var p Pet
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		logger.Warn("Invalid JSON in request: %v", err)
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
 
-	logger.Debug("Processing pet data: %+v", p)
+	logger.DebugCtx(r.Context(), "Processing pet data: %+v", p)
 	id, err := data.CreatePet(DB, data.PetInput{
 		Name:    p.Name,
 		Species: p.Species,
@@ -311,13 +311,13 @@ func CreatePet(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		logger.Error("Failed to create pet: %v", err)
+		logger.ErrorCtx(r.Context(), "Failed to create pet: %v", err)
 		http.Error(w, "failed to create pet", http.StatusInternalServerError)
 		return
 	}
 
 	p.ID = id
-	logger.Info("Successfully created pet with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully created pet with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
@@ -326,10 +326,10 @@ func CreatePet(w http.ResponseWriter, r *http.Request) {
 // -------------------- Visits --------------------
 
 func GetVisits(w http.ResponseWriter, r *http.Request) {
-	logger.Debug("Fetching all visits")
+	logger.DebugCtx(r.Context(), "Fetching all visits")
 	rows, err := data.ListVisits(DB)
 	if err != nil {
-		logger.Error("Failed to fetch visits: %v", err)
+		logger.ErrorCtx(r.Context(), "Failed to fetch visits: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -337,7 +337,7 @@ func GetVisits(w http.ResponseWriter, r *http.Request) {
 	for _, rv := range rows {
 		visits = append(visits, Visit{ID: rv.ID, PetID: rv.PetID, VetID: rv.VetID, Visit: rv.Visit, Desc: rv.Desc})
 	}
-	logger.Debug("Retrieved %d visits", len(visits))
+	logger.DebugCtx(r.Context(), "Retrieved %d visits", len(visits))
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(visits)
 }
@@ -346,35 +346,35 @@ func GetVisitByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		logger.Warn("Invalid visit ID format: %s", idStr)
+		logger.WarnCtx(r.Context(), "Invalid visit ID format: %s", idStr)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
-	logger.Debug("Fetching visit with ID: %d", id)
+	logger.DebugCtx(r.Context(), "Fetching visit with ID: %d", id)
 	rv, err := data.GetVisitByID(DB, id)
 	if err != nil {
-		logger.Error("Visit not found with ID %d: %v", id, err)
+		logger.ErrorCtx(r.Context(), "Visit not found with ID %d: %v", id, err)
 		http.Error(w, "visit not found", http.StatusNotFound)
 		return
 	}
 
 	v := Visit{ID: rv.ID, PetID: rv.PetID, VetID: rv.VetID, Visit: rv.Visit, Desc: rv.Desc}
-	logger.Debug("Successfully retrieved visit: %+v", v)
+	logger.DebugCtx(r.Context(), "Successfully retrieved visit: %+v", v)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(v)
 }
 
 func CreateVisit(w http.ResponseWriter, r *http.Request) {
-	logger.Info("Creating new visit")
+	logger.InfoCtx(r.Context(), "Creating new visit")
 	var v Visit
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		logger.Warn("Invalid JSON in request: %v", err)
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
 
-	logger.Debug("Processing visit data: %+v", v)
+	logger.DebugCtx(r.Context(), "Processing visit data: %+v", v)
 	id, err := data.CreateVisit(DB, data.VisitInput{
 		PetID: v.PetID,
 		VetID: v.VetID,
@@ -383,13 +383,13 @@ func CreateVisit(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		logger.Error("Failed to create visit: %v", err)
+		logger.ErrorCtx(r.Context(), "Failed to create visit: %v", err)
 		http.Error(w, "failed to create visit", http.StatusInternalServerError)
 		return
 	}
 
 	v.ID = id
-	logger.Info("Successfully created visit with ID: %d", id)
+	logger.InfoCtx(r.Context(), "Successfully created visit with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(v)

@@ -57,7 +57,7 @@ func generateToken(userID int, email string) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":   userID,
 		"email": email,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"exp":   time.Now().Add(4 * time.Hour).Unix(),
 		"iat":   time.Now().Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -157,24 +157,24 @@ const ctxUserIDKey ctxKey = "user_id"
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("Processing authentication for request: %s %s", r.Method, r.URL.Path)
+		logger.DebugCtx(r.Context(), "Auth: Processing %s %s", r.Method, r.URL.Path)
 
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			logger.Warn("Missing authorization header")
+			logger.WarnCtx(r.Context(), "Auth: Missing authorization header - %s %s", r.Method, r.URL.Path)
 			http.Error(w, "missing authorization header", http.StatusUnauthorized)
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			logger.Warn("Invalid authorization header format")
+			logger.WarnCtx(r.Context(), "Auth: Invalid authorization header format - %s %s", r.Method, r.URL.Path)
 			http.Error(w, "invalid authorization header format", http.StatusUnauthorized)
 			return
 		}
 
 		tokenString := parts[1]
-		logger.Debug("Validating JWT token")
+		logger.DebugCtx(r.Context(), "Validating JWT token")
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -184,29 +184,34 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			logger.Warn("Invalid JWT token: %v", err)
+			logger.WarnCtx(r.Context(), "Invalid JWT token: %v", err)
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok || !token.Valid {
-			logger.Warn("Invalid token claims")
+			logger.WarnCtx(r.Context(), "Invalid token claims")
 			http.Error(w, "invalid token claims", http.StatusUnauthorized)
 			return
 		}
 
 		userID, ok := claims["sub"].(float64)
 		if !ok {
-			logger.Warn("Invalid user ID in token")
+			logger.WarnCtx(r.Context(), "Invalid user ID in token")
 			http.Error(w, "invalid user ID in token", http.StatusUnauthorized)
 			return
 		}
 
+		// Extract optional email
+		var ctxWithUser = r.Context()
+		if em, ok := claims["email"].(string); ok && em != "" {
+			ctxWithUser = context.WithValue(ctxWithUser, logger.CtxUserEmailKey, em)
+		}
 		// Add user ID to context
 		userIDInt := int(userID)
-		logger.Debug("Successfully authenticated user ID: %d", userIDInt)
-		ctx := context.WithValue(r.Context(), ctxUserIDKey, userIDInt)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		logger.DebugCtx(r.Context(), "Successfully authenticated user ID: %d", userIDInt)
+		ctxWithUser = context.WithValue(ctxWithUser, logger.CtxUserIDKey, userIDInt)
+		next.ServeHTTP(w, r.WithContext(ctxWithUser))
 	}
 }

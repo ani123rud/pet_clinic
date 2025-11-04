@@ -26,6 +26,9 @@ func main() {
 	}
 	defer DB.Close()
 
+	// Initialize database logging
+	logger.SetDB(DB)
+
 	logger.Info("Database connection established")
 
 	http.HandleFunc("/auth/register", func(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +73,7 @@ func main() {
 
 	// Pets
 	http.HandleFunc("/pets", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("%s %s", r.Method, r.URL.Path)
+		logger.DebugCtx(r.Context(), "%s %s", r.Method, r.URL.Path)
 		if r.Method == http.MethodGet {
 			GetPets(w, r)
 		} else if r.Method == http.MethodPost {
@@ -81,7 +84,7 @@ func main() {
 	}))
 
 	http.HandleFunc("/pets/id", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("%s %s", r.Method, r.URL.Path)
+		logger.DebugCtx(r.Context(), "%s %s", r.Method, r.URL.Path)
 		switch r.Method {
 		case http.MethodGet:
 			GetPetByID(w, r)
@@ -96,6 +99,7 @@ func main() {
 
 	// Visits
 	http.HandleFunc("/visits", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		logger.DebugCtx(r.Context(), "%s %s", r.Method, r.URL.Path)
 		if r.Method == http.MethodGet {
 			GetVisits(w, r)
 		} else if r.Method == http.MethodPost {
