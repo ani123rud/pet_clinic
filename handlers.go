@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"petclinic/data"
 	"petclinic/logger"
@@ -161,6 +164,85 @@ func DeleteOwner(w http.ResponseWriter, r *http.Request) {
 	logger.InfoCtx(r.Context(), "Successfully deleted owner with ID: %d", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func UploadFile(w http.ResponseWriter, r *http.Request) {
+    logger.InfoCtx(r.Context(), "Uploading file")
+    if err := r.ParseMultipartForm(32 << 20); err != nil {
+        logger.WarnCtx(r.Context(), "Failed to parse multipart form: %v", err)
+        http.Error(w, "invalid multipart form", http.StatusBadRequest)
+        return
+    }
+
+    file, header, err := r.FormFile("file")
+    if err != nil {
+        logger.WarnCtx(r.Context(), "Missing file in form: %v", err)
+        http.Error(w, "missing file", http.StatusBadRequest)
+        return
+    }
+    defer file.Close()
+
+    filename := filepath.Base(header.Filename)
+    if filename == "" {
+        http.Error(w, "invalid filename", http.StatusBadRequest)
+        return
+    }
+
+    if err := os.MkdirAll("uploads", 0755); err != nil {
+        logger.ErrorCtx(r.Context(), "Failed to ensure uploads directory: %v", err)
+        http.Error(w, "internal error", http.StatusInternalServerError)
+        return
+    }
+
+    dstPath := filepath.Join("uploads", filename)
+    dst, err := os.Create(dstPath)
+    if err != nil {
+        logger.ErrorCtx(r.Context(), "Failed to create destination file: %v", err)
+        http.Error(w, "failed to save file", http.StatusInternalServerError)
+        return
+    }
+    defer dst.Close()
+
+    n, err := io.Copy(dst, file)
+    if err != nil {
+        logger.ErrorCtx(r.Context(), "Failed to write file: %v", err)
+        http.Error(w, "failed to save file", http.StatusInternalServerError)
+        return
+    }
+
+    logger.InfoCtx(r.Context(), "Uploaded file: %s (%d bytes)", filename, n)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "name":   filename,
+        "size":   n,
+        "message": "File uploaded successfully",
+    })
+}
+
+func DownloadFile(w http.ResponseWriter, r *http.Request) {
+    name := r.URL.Query().Get("name")
+    if name == "" {
+        http.Error(w, "missing name parameter", http.StatusBadRequest)
+        return
+    }
+
+    filename := filepath.Base(name)
+    path := filepath.Join("uploads", filename)
+
+    if _, err := os.Stat(path); err != nil {
+        if os.IsNotExist(err) {
+            logger.WarnCtx(r.Context(), "File not found: %s", filename)
+            http.Error(w, "file not found", http.StatusNotFound)
+            return
+        }
+        logger.ErrorCtx(r.Context(), "Failed to access file: %v", err)
+        http.Error(w, "internal error", http.StatusInternalServerError)
+        return
+    }
+
+    logger.InfoCtx(r.Context(), "Downloading file: %s", filename)
+    http.ServeFile(w, r, path)
 }
 
 // -------------------- Pets --------------------

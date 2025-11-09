@@ -58,6 +58,19 @@ func main() {
 		}
 	}))
 
+	// Files (local storage)
+	http.HandleFunc("/files", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		logger.DebugCtx(r.Context(), "%s %s", r.Method, r.URL.Path)
+		switch r.Method {
+		case http.MethodPost:
+			UploadFile(w, r)
+		case http.MethodGet:
+			DownloadFile(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
 	http.HandleFunc("/owners/id", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
