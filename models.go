@@ -25,3 +25,9 @@ type Visit struct {
 	Visit  time.Time `json:"visit_date"`
 	Desc   string    `json:"description"`
 }
+
+type Vet struct {
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	Specialization string `json:"specialization"`
+}

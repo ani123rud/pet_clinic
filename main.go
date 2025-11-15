@@ -110,6 +110,32 @@ func main() {
 		}
 	}))
 
+	// Vets
+	http.HandleFunc("/vets", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		logger.DebugCtx(r.Context(), "%s %s", r.Method, r.URL.Path)
+		switch r.Method {
+		case http.MethodGet:
+			GetVets(w, r)
+		case http.MethodPost:
+			CreateVet(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
+	http.HandleFunc("/vets/id", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			GetVetByID(w, r)
+		case http.MethodPut:
+			UpdateVet(w, r)
+		case http.MethodDelete:
+			DeleteVet(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
 	// Visits
 	http.HandleFunc("/visits", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		logger.DebugCtx(r.Context(), "%s %s", r.Method, r.URL.Path)
@@ -118,7 +144,7 @@ func main() {
 		} else if r.Method == http.MethodPost {
 			CreateVisit(w, r)
 		} else {
-			http.Error(w, "Method not allowed", 405)
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	}))
 

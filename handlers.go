@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -403,6 +404,192 @@ func CreatePet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
+}
+
+// -------------------- Vets --------------------
+
+func GetVets(w http.ResponseWriter, r *http.Request) {
+	logger.InfoCtx(r.Context(), "Fetching all vets")
+	rows, err := data.ListVets(DB)
+	if err != nil {
+		logger.ErrorCtx(r.Context(), "Failed to fetch vets: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	vets := make([]Vet, len(rows))
+	for i, rv := range rows {
+		vets[i] = Vet{
+			ID:            rv.ID,
+			Name:          rv.Name,
+			Specialization: rv.Specialization,
+		}
+	}
+
+	logger.DebugCtx(r.Context(), "Retrieved %d vets", len(vets))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vets)
+}
+
+func GetVetByID(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		logger.WarnCtx(r.Context(), "Invalid vet ID format: %s", idStr)
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	logger.DebugCtx(r.Context(), "Fetching vet with ID: %d", id)
+	v, err := data.GetVetByID(DB, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			logger.WarnCtx(r.Context(), "Vet not found with ID %d", id)
+			http.Error(w, "vet not found", http.StatusNotFound)
+		} else {
+			logger.ErrorCtx(r.Context(), "Error fetching vet with ID %d: %v", id, err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	vet := Vet{
+		ID:            v.ID,
+		Name:          v.Name,
+		Specialization: v.Specialization,
+	}
+
+	logger.DebugCtx(r.Context(), "Successfully retrieved vet: %+v", vet)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vet)
+}
+
+func CreateVet(w http.ResponseWriter, r *http.Request) {
+	logger.InfoCtx(r.Context(), "Creating new vet")
+	var v Vet
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	if v.Name == "" {
+		logger.WarnCtx(r.Context(), "Vet name is required")
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
+
+	logger.DebugCtx(r.Context(), "Processing vet data: %+v", v)
+	id, err := data.CreateVet(DB, data.VetInput{
+		Name:          v.Name,
+		Specialization: v.Specialization,
+	})
+
+	if err != nil {
+		logger.ErrorCtx(r.Context(), "Failed to create vet: %v", err)
+		http.Error(w, "failed to create vet", http.StatusInternalServerError)
+		return
+	}
+
+	v.ID = id
+	logger.InfoCtx(r.Context(), "Successfully created vet with ID: %d", id)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(v)
+}
+
+func UpdateVet(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		logger.WarnCtx(r.Context(), "Invalid vet ID format: %s", idStr)
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	// Check if vet exists
+	_, err = data.GetVetByID(DB, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			logger.WarnCtx(r.Context(), "Vet not found with ID %d", id)
+			http.Error(w, "vet not found", http.StatusNotFound)
+		} else {
+			logger.ErrorCtx(r.Context(), "Error fetching vet with ID %d: %v", id, err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	var v Vet
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		logger.WarnCtx(r.Context(), "Invalid JSON in request: %v", err)
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	if v.Name == "" {
+		logger.WarnCtx(r.Context(), "Vet name is required")
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
+
+	logger.DebugCtx(r.Context(), "Updating vet ID %d with data: %+v", id, v)
+	err = data.UpdateVet(DB, id, data.VetInput{
+		Name:          v.Name,
+		Specialization: v.Specialization,
+	})
+
+	if err != nil {
+		logger.ErrorCtx(r.Context(), "Failed to update vet ID %d: %v", id, err)
+		http.Error(w, "failed to update vet", http.StatusInternalServerError)
+		return
+	}
+
+	// Fetch updated vet to return
+	updatedVet, _ := data.GetVetByID(DB, id)
+	vet := Vet{
+		ID:            updatedVet.ID,
+		Name:          updatedVet.Name,
+		Specialization: updatedVet.Specialization,
+	}
+
+	logger.InfoCtx(r.Context(), "Successfully updated vet ID: %d", id)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vet)
+}
+
+func DeleteVet(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		logger.WarnCtx(r.Context(), "Invalid vet ID format: %s", idStr)
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	// Check if vet exists
+	_, err = data.GetVetByID(DB, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			logger.WarnCtx(r.Context(), "Vet not found with ID %d", id)
+			http.Error(w, "vet not found", http.StatusNotFound)
+		} else {
+			logger.ErrorCtx(r.Context(), "Error fetching vet with ID %d: %v", id, err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	logger.InfoCtx(r.Context(), "Deleting vet with ID: %d", id)
+	err = data.DeleteVet(DB, id)
+	if err != nil {
+		logger.ErrorCtx(r.Context(), "Failed to delete vet ID %d: %v", id, err)
+		http.Error(w, "failed to delete vet", http.StatusInternalServerError)
+		return
+	}
+
+	logger.InfoCtx(r.Context(), "Successfully deleted vet with ID: %d", id)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // -------------------- Visits --------------------
