@@ -1,0 +1,629 @@
+{
+	"info": {
+		"_postman_id": "3e572ec4-6e45-4edf-bca2-4f3abda1dd2a",
+		"name": "pet_clinic",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32227023"
+	},
+	"item": [
+		{
+			"name": "owners",
+			"item": [
+				{
+					"name": "getowners",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/owners",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"owners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createowners",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Alice\",\"phone\":\"1234567890\",\"address\":\"1 Main St\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/owners",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"owners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "deleteowners",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Anirudh\",\"phone\":\"1234567890\",\"address\":\"1 Main St\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/owners/id?id=5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"owners",
+								"id"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateowners",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Anirudh\",\"phone\":\"1234567890\",\"address\":\"1 Main St\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/owners/id?id=5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"owners",
+								"id"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "pets",
+			"item": [
+				{
+					"name": "getpet",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Rex\",\"species\":\"Dog\",\"breed\":\"Beagle\",\"birth_date\":\"2023-05-01T00:00:00Z\",\"owner_id\":1}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pets",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createpet",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Rex\",\"species\":\"Dog\",\"breed\":\"Beagle\",\"birth_date\":\"2023-05-01T00:00:00Z\",\"owner_id\":6}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pets",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updatepet",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Rex\",\"species\":\"Dog\",\"breed\":\"Beagle\",\"birth_date\":\"2023-05-01T00:00:00Z\",\"owner_id\":2}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pets/id?id=2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets",
+								"id"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delpet",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "visits",
+			"item": [
+				{
+					"name": "getvisits",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "createvisits",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Rex\",\"species\":\"Dog\",\"breed\":\"Beagle\",\"birth_date\":\"2023-05-01T00:00:00Z\",\"owner_id\":1}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/visits",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"visits"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updatevisits",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"pet_id\":1,\"vet_id\":2,\"visit_date\":\"2025-03-12T00:00:00Z\",\"description\":\"Checkup\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/visits/id?id=5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"visits",
+								"id"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delvisits",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "vets",
+			"item": [
+				{
+					"name": "getvets",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "createvets",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Rex\",\"species\":\"Dog\",\"breed\":\"Beagle\",\"birth_date\":\"2023-05-01T00:00:00Z\",\"owner_id\":1}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/vets",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"vets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updatevets",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Dr. Anil\", \"specialization\":\" Surgery\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/vets/id?id=3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"vets",
+								"id"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delvets",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Rex\",\"species\":\"Dog\",\"breed\":\"Beagle\",\"birth_date\":\"2023-05-01T00:00:00Z\",\"owner_id\":1}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/vets/id?id=3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"vets",
+								"id"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "login",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGhAZ21haWwyLmNvbSIsImV4cCI6MTc2MjgwNjM5NiwiaWF0IjoxNzYyNzkxOTk2LCJzdWIiOjR9.KJztw46SQeAP3pyJ6GQx0ZPGVK7muirh5UANmNNN0sA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"anirudh722@gmail.com\",\r\n    \"password\":\"4555\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"anirudh722@gmail.com\",\r\n    \"password\": \"4555\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "upload",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaXJ1ZGg3MjJAZ21haWwuY29tIiwiZXhwIjoxNzYzMjM1NTQ4LCJpYXQiOjE3NjMyMjExNDgsInN1YiI6NX0.h3nEZMvd-OFfhsH93te8ipCgXXsh56JOfZiNzeWIwXE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/ASUS/Documents/cyber.avif"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/files",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"files"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "download",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

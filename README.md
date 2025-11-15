@@ -198,18 +198,54 @@ Server running at :8080
 
 ---
 
+### Vets
+
+* **GET** `/vets` — Returns list of all vets
+
+  ```bash
+  curl -H "Authorization: Bearer YOUR_JWT_TOKEN" http://localhost:8080/vets
+  ```
+
+* **POST** `/vets` — Create a new vet
+  
+  ```bash
+  curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+    -d '{"name":"Dr. Smith", "specialization":"Surgery"}' \
+    http://localhost:8080/vets
+  ```
+
+* **GET** `/vets/id?id={id}` — Returns a single vet by ID
+
+  ```bash
+  curl -H "Authorization: Bearer YOUR_JWT_TOKEN" "http://localhost:8080/vets/id?id=1"
+  ```
+
+* **PUT** `/vets/id?id={id}` — Update a vet
+
+  ```bash
+  curl -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+    -d '{"name":"Dr. Smith", "specialization":"Advanced Surgery"}' \
+    "http://localhost:8080/vets/id?id=1"
+  ```
+
+* **DELETE** `/vets/id?id={id}` — Delete a vet
+
+  ```bash
+  curl -X DELETE -H "Authorization: Bearer YOUR_JWT_TOKEN" "http://localhost:8080/vets/id?id=1"
+  ```
+
 ### Visits
 
 * **GET** `/visits` — Returns list of visits
 
   ```bash
-  curl http://localhost:8080/visits
+  curl -H "Authorization: Bearer YOUR_JWT_TOKEN" http://localhost:8080/visits
   ```
 
 * **GET** `/visits/id?id={id}` — Returns a single visit by ID
 
   ```bash
-  curl "http://localhost:8080/visits/id?id=1"
+  curl -H "Authorization: Bearer YOUR_JWT_TOKEN" "http://localhost:8080/visits/id?id=1"
   ```
 
 * **POST** `/visits` — Creates a visit

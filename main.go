@@ -8,10 +8,30 @@ import (
 	"petclinic/logger"
 )
 
+func recoveryMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        defer func() {
+            if err := recover(); err != nil {
+                logger.Error("Recovered from panic: %v", err)
+                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+            }
+        }()
+        next.ServeHTTP(w, r)
+    })
+}
+
 func main() {
 	// Initialize logger with INFO level by default
 	logger.SetLevel(os.Getenv("LOG_LEVEL"))
 	logger.Info("Starting Pet Clinic application...")
+
+	// Set up panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("Application panicked: %v", r)
+			// You might want to add more detailed error handling here
+		}
+	}()
 
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
@@ -24,18 +44,24 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to initialize database: %v", err)
 	}
-	defer DB.Close()
+	defer func() {
+		if err := DB.Close(); err != nil {
+			logger.Error("Error closing database connection: %v", err)
+		}
+	}()
 
 	// Initialize database logging
 	logger.SetDB(DB)
 
 	logger.Info("Database connection established")
 
+	// Register routes
 	http.HandleFunc("/auth/register", func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("Register endpoint called")
 		if r.Method == http.MethodPost {
 			Register(w, r)
 		} else {
-			http.Error(w, "Method not allowed", 405)
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -161,6 +187,19 @@ func main() {
 		}
 	}))
 
-	logger.Info("Server starting on :8080")
-	logger.Fatal("Server stopped: %v", http.ListenAndServe(":8080", nil))
+	logger.Info("	// Start server")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: recoveryMiddleware(http.DefaultServeMux),
+	}
+
+	logger.Info("Server starting on :%s", port)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		logger.Fatal("Server failed to start: %v", err)
+	}
 }
